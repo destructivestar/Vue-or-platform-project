@@ -31,8 +31,8 @@ export default {
   data () {
     return {
       loginForm: {
-        username: '',
-        password: ''
+        username: 'admin',
+        password: '123456'
       },
       loginFormRules: {
         username: [
@@ -53,12 +53,18 @@ export default {
       this.$refs.loginFormRef.resetFields()
     },
     login () {
+      // 表示异步请求
       this.$refs.loginFormRef.validate(async valid => {
         // console.log(valid)
-        // eslint-disable-next-line no-useless-return
+        // eslint-disable-next-line no-useless-return async:异步 await:等待 表示两种请求模式
         if (!valid) return
         // eslint-disable-next-line no-unused-vars
-        const { data: res } = await this.$http.post('login', this.loginForm)
+        const { data: res } = await this.$http.post('user/login', this.loginForm)
+        // if (res.data.status !== 200) this.$message.error('登陆失败')
+        this.$message.success('登陆成功')
+        window.sessionStorage.setItem('username', res.username)
+        // push是vue的路由跳转到组件指令
+        await this.$router.push('/home')
       })
     }
   }
