@@ -21,7 +21,8 @@
           active-text-color="#409EFF"
           unique-opened :collapse="isCollapse"
           :collapse-transition="false"
-          :router="true">
+          :router="true"
+        :default-active="activeNavPath">
           <!--一级菜单-->
           <el-submenu :index="item.id + ''" v-for="item in menuList" :key="item.id">
             <!--菜单标题-->
@@ -30,7 +31,9 @@
               <span>{{item.psName}}</span>
             </template>
             <!--二级菜单-->
-            <el-menu-item :index="'/'+subItem.psApiPath + ''" v-for="subItem in item.children" :key="subItem.id">
+            <el-menu-item :index="'/'+subItem.psApiPath + ''"
+                          v-for="subItem in item.children"
+                          :key="subItem.id" @click="saveNavState('/'+subItem.psApiPath)">
               <!--二级菜单标题-->
               <template slot="title">
                 <i class="el-icon-menu"></i>
@@ -60,11 +63,13 @@ export default {
         '25': 'iconfont icon-danju',
         '45': 'iconfont icon-baobiao'
       },
-      isCollapse: false
+      isCollapse: false,
+      activeNavPath: ''
     }
   },
   mounted () {
     this.getMenus()
+    this.activeNavPath = window.sessionStorage.getItem('path')
   },
   methods: {
     logout () {
@@ -74,12 +79,16 @@ export default {
     async getMenus () {
       // eslint-disable-next-line no-unused-vars
       const { data: res } = await this.$http.get('menu/list')
-      console.log(res)
+      // console.log(res)
       if (res.code !== '000000') return this.$message.error(res.msg)
       this.menuList = res.data
     },
     toggleCollapse () {
       this.isCollapse = !this.isCollapse
+    },
+    saveNavState (saveNavPath) {
+      window.sessionStorage.setItem('path', saveNavPath)
+      this.activeNavPath = saveNavPath
     }
   }
 }
