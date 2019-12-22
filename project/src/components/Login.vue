@@ -53,10 +53,10 @@ export default {
       this.$refs.loginFormRef.resetFields()
     },
     login () {
-      // 表示异步请求
+      // $refs.loginFormRef.validate 表示提交前的预校验操作
       this.$refs.loginFormRef.validate(async valid => {
         // console.log(valid)
-        // eslint-disable-next-line no-useless-return async:异步 await:等待 表示两种请求模式
+        // eslint-disable-next-line no-useless-return async: await: 表示处理解析promise
         if (!valid) return
         // eslint-disable-next-line no-unused-vars
         const { data: res } = await this.$http.post('user/login', this.loginForm)
