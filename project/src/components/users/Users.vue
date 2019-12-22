@@ -34,11 +34,16 @@
           </template>
         </el-table-column>
         <el-table-column label="操作" width="180px">
-          <el-button type="primary" icon="el-icon-edit" size="mini" @click="showEditDialog"></el-button>
-          <el-button type="danger" icon="el-icon-delete" size="mini"></el-button>
-          <el-tooltip effect="dark" content="分配角色" placement="top" :enterable="false">
-            <el-button type="warning" icon="el-icon-setting" size="mini"></el-button>
-          </el-tooltip>
+          <template slot-scope="scope">
+            <!--修改按钮-->
+            <el-button type="primary" icon="el-icon-edit" size="mini" @click="showEditDialog(scope.row.userId)"></el-button>
+            <!--删除按钮-->
+            <el-button type="danger" icon="el-icon-delete" size="mini"></el-button>
+            <!--角色分配按钮-->
+            <el-tooltip effect="dark" content="分配角色" placement="top" :enterable="false">
+              <el-button type="warning" icon="el-icon-setting" size="mini"></el-button>
+            </el-tooltip>
+          </template>
         </el-table-column>
       </el-table>
       <!--分页区域-->
@@ -85,13 +90,28 @@
       </el-dialog>
       <!--修改用户对话框-->
       <el-dialog
-        title="提示"
+        title="修改用户"
         :visible.sync="editDialogVisible"
-        width="30%">
-        <span>修改用户</span>
+        width="50%"
+      @close="editDialogClosed">
+          <el-form ref="editFormRef" :model="editForm" label-width="70px" :rules="editFormRules">
+            <el-form-item label="用户名">
+              <el-input v-model="editForm.username" disabled="disabled"></el-input>
+            </el-form-item>
+            <!--prop中的绑定属性名必须要和editForm中的一致否则无法验证-->
+            <el-form-item label="qq" prop="userQq">
+              <el-input v-model="editForm.userQq"></el-input>
+            </el-form-item>
+            <el-form-item label="邮箱" prop="userEmail">
+              <el-input v-model="editForm.userEmail"></el-input>
+            </el-form-item>
+            <el-form-item label="电话" prop="userTel">
+              <el-input v-model="editForm.userTel"></el-input>
+            </el-form-item>
+          </el-form>
           <span slot="footer" class="dialog-footer">
             <el-button @click="editDialogVisible = false">取 消</el-button>
-            <el-button type="primary" @click="editDialogVisible = false">确 定</el-button>
+            <el-button type="primary" @click="editUserInfo">确 定</el-button>
           </span>
       </el-dialog>
     </div>
@@ -177,7 +197,19 @@ export default {
           { validator: checkTel, trigger: 'blur' }
         ]
       },
-      editDialogVisible: false
+      editDialogVisible: false,
+      editForm: {},
+      editFormRules: {
+        userQq: [
+          { required: true, message: '请输入qq', trigger: 'blur' },
+          { validator: checkQq, trigger: 'blur' }],
+        userEmail: [
+          { required: true, message: '请输入邮箱', trigger: 'blur' },
+          { validator: checkEmail, trigger: 'blur' }],
+        userTel: [
+          { required: true, message: '请输入电话号', trigger: 'blur' },
+          { validator: checkTel, trigger: 'blur' }]
+      }
     }
   },
   created () {
@@ -211,7 +243,7 @@ export default {
     dialogVisible () {
       this.addDialogVisible = true
     },
-    // 添加用户对话框
+    // 重置添加用户对话框
     addDialogClosed () {
       this.$refs.addFormRef.resetFields()
     },
@@ -228,8 +260,32 @@ export default {
         this.getUserList()
       })
     },
-    showEditDialog () {
+    // 修改用户
+    async showEditDialog (id) {
       this.editDialogVisible = true
+      const { data: res } = await this.$http.get('users/user/' + id)
+      this.editForm = res.data
+      // console.log(this.editForm.username)
+    },
+    // 重置编辑
+    editDialogClosed () {
+      this.$refs.editFormRef.resetFields()
+    },
+    // 编辑用户
+    editUserInfo () {
+      this.$refs.editFormRef.validate(async valid => {
+        // eslint-disable-next-line no-useless-return
+        if (!valid) return
+        let user = { 'userTel': this.editForm.userTel, 'userQq': this.editForm.userQq, 'userEmail': this.editForm.userEmail }
+        console.log(this.editForm.userId)
+        const { data: res } = await this.$http.put('users/edit/' + this.editForm.userId, user)
+        if (res.code !== '000000') {
+          this.$message.error('更新失败')
+        }
+        this.$message.success('更新成功')
+        this.editDialogVisible = false
+        this.getUserList()
+      })
     }
   }
 }
