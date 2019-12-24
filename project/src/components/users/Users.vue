@@ -38,7 +38,7 @@
             <!--修改按钮-->
             <el-button type="primary" icon="el-icon-edit" size="mini" @click="showEditDialog(scope.row.userId)"></el-button>
             <!--删除按钮-->
-            <el-button type="danger" icon="el-icon-delete" size="mini"></el-button>
+            <el-button type="danger" icon="el-icon-delete" size="mini" @click="removeUserById(scope.row.userId)"></el-button>
             <!--角色分配按钮-->
             <el-tooltip effect="dark" content="分配角色" placement="top" :enterable="false">
               <el-button type="warning" icon="el-icon-setting" size="mini"></el-button>
@@ -121,7 +121,7 @@
 
 export default {
   data () {
-    // 校验邮箱
+    // 校验邮箱 ---自定义校验规则
     let checkEmail = (rule, value, callback) => {
       const emailReg = /^\w+([-+.]\w+)*@\w+([-.]\w+)*\.\w+([-.]\w+)*$/
       if (emailReg.test(value)) {
@@ -147,6 +147,7 @@ export default {
     }
     // 校验手机号
     let checkTel = (rule, value, callback) => {
+      // 手机号正则
       const phoneReg = /^0?(13[0-9]|15[012356789]|18[0236789]|14[57])[0-9]{8}$/
       if (phoneReg.test(value)) {
         return callback()
@@ -172,10 +173,11 @@ export default {
         userQq: '',
         userTel: ''
       },
+      // 添加用户校验规则
       addFormRules: {
         username: [
           { required: true, message: '请输入用户名', trigger: 'blur' },
-          { min: 3, max: 5, message: '请输入3-5个字', trigger: 'blur' }
+          { min: 2, max: 5, message: '请输入3-5个字', trigger: 'blur' }
         ],
         password: [
           { required: true, message: '请输入密码', trigger: 'blur' },
@@ -197,6 +199,7 @@ export default {
           { validator: checkTel, trigger: 'blur' }
         ]
       },
+      // 编辑用户校验规则
       editDialogVisible: false,
       editForm: {},
       editFormRules: {
@@ -212,6 +215,7 @@ export default {
       }
     }
   },
+  // 初始化
   created () {
     this.getUserList()
   },
@@ -277,7 +281,6 @@ export default {
         // eslint-disable-next-line no-useless-return
         if (!valid) return
         let user = { 'userTel': this.editForm.userTel, 'userQq': this.editForm.userQq, 'userEmail': this.editForm.userEmail }
-        console.log(this.editForm.userId)
         const { data: res } = await this.$http.put('users/edit/' + this.editForm.userId, user)
         if (res.code !== '000000') {
           this.$message.error('更新失败')
@@ -286,6 +289,23 @@ export default {
         this.editDialogVisible = false
         this.getUserList()
       })
+    },
+    // 删除用户
+    async removeUserById (id) {
+      const confirmResult = await this.$confirm('此操作将永久删除该用户, 是否继续?', '提示', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }).catch(err => err)
+      if (confirmResult !== 'confirm') {
+        return this.$message.info('删除已取消')
+      }
+      const { data: res } = await this.$http.delete(`users/delete/${id}`)
+      if (res.code !== '000000') {
+        return this.$message.success('删除失败')
+      }
+      this.$message.success('该用户已删除')
+      this.getUserList()
     }
   }
 }
