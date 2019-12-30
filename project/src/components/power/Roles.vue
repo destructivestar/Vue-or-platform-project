@@ -41,7 +41,7 @@
                       <el-tag type="warning" v-for="(item3,
                       // eslint-disable-next-line vue/no-unused-vars
                       i3
-                      ) in item2.children" :key="item3.id">{{item3.psName}}</el-tag>
+                      ) in item2.children" :key="item3.id" closable @close="removeRightById(item3.psId,scope.row.roleId)">{{item3.psName}}</el-tag>
                     </el-col>
                   </el-row>
                 </el-col>
@@ -53,14 +53,34 @@
           <el-table-column label="角色名称" prop="roleName"></el-table-column>
           <el-table-column label="角色描述" prop="roleDesc"></el-table-column>
           <el-table-column label="操作" width="300px">
-            <template >
+            <template slot-scope="scope">
               <el-button size="mini" type="primary" icon="el-icon-edit">搜索</el-button>
               <el-button size="mini" type="danger" icon="el-icon-delete">删除</el-button>
-              <el-button size="mini" type="warning" icon="el-icon-setting">修改权限</el-button>
+              <el-button size="mini" type="warning" icon="el-icon-setting" @click="showSetRightDialog(scope.row)">修改权限</el-button>
             </template>
           </el-table-column>
         </el-table>
       </el-card>
+      <!--分配权限对话框-->
+      <el-dialog
+        title="提示"
+        :visible.sync="setRightDialogVisible"
+        width="50%"
+        @close="showSetRightDialogClosed">
+        <!--树形控件-->
+        <el-tree :data="rightTree"
+                 :props="treeProps"
+                 ref="treeRef"
+                 show-checkbox
+                 node-key="psId"
+                 default-expand-all
+                 :default-checked-keys="defKeys" >
+        </el-tree>
+        <span slot="footer" class="dialog-footer">
+          <el-button @click="setRightDialogVisible = false">取 消</el-button>
+          <el-button type="primary" @click="allotRights">确 定</el-button>
+        </span>
+      </el-dialog>
     </div>
 </template>
 
@@ -68,17 +88,84 @@
 export default {
   data () {
     return {
-      rolesList: []
+      rolesList: [],
+      setRightDialogVisible: false,
+      rightTree: [],
+      treeProps: {
+        children: 'children',
+        label: 'psName'
+      },
+      defKeys: [],
+      roleId: []
     }
   },
   mounted () {
-    this.getRoles()
+    this.getRolesList()
   },
   methods: {
-    async getRoles () {
+    // 获取角色列表
+    async getRolesList () {
       const { data: res } = await this.$http.get('power/tree')
       this.rolesList = res.data
-      console.log(res.data)
+    },
+    // 根据Id移除角色权限
+    async removeRightById (psId, roleId) {
+      const confirmResult = await this.$confirm('此操作将永久删除该权限, 是否继续?', '提示', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }).catch(err => err)
+      // roleId: 角色Id, psId: 权限Id 一个角色对应多个权限
+      if (confirmResult !== 'confirm') {
+        return this.$message.info('已取消')
+      }
+      await this.$http.put(`power/removeAuth/${psId}/${roleId}`)
+      this.$message.warning('已删除')
+      this.getRolesList()
+    },
+    // 显示树形结构
+    async showSetRightDialog (role) {
+      this.roleId = role.roleId
+      this.setRightDialogVisible = !this.setRightDialogVisible
+      const { data: res } = await this.$http.get('power/role')
+      if (res.code !== '000000') {
+        return this.$message.error('获取权限树失败')
+      }
+      // this.$message.success('获取成功')
+      this.rightTree = res.data
+      // 递归三级节点
+      this.getLeafKeys(role, this.defKeys)
+      this.setRightDialogVisible = true
+    },
+    // 用递归的形式，获取角色下三级权限id，并保存到defKeys数组中
+    getLeafKeys (node, arr) {
+      // 如果当前node节点为null,表示就必然是三级节点
+      if (node.children === null) {
+        return arr.push(node.psId)
+      }
+      node.children.forEach(item =>
+        this.getLeafKeys(item, arr)
+      )
+    },
+    // 重置数组
+    showSetRightDialogClosed () {
+      this.defKeys = []
+    },
+    // 分配权限操作
+    async allotRights () {
+      const keys = [
+        ...this.$refs.treeRef.getCheckedKeys(),
+        ...this.$refs.treeRef.getHalfCheckedKeys()
+      ]
+      const ids = keys.join(',')
+      const { data: res } = await this.$http.post(`power/AssignPermissions/${this.roleId}/${ids}`)
+      if (res.code !== '000000') {
+        this.$message.error('分配权限失败')
+      }
+      // console.log(keys)
+      this.$message.success('分配权限成功')
+      this.setRightDialogVisible = false
+      this.getRolesList()
     }
   }
 }
