@@ -6,6 +6,7 @@ import './plugins/element.js'
 import './assets/css/global.css'
 import axios from 'axios'
 import './assets/fonts/iconfont.css'
+import TreeTable from 'vue-table-with-tree-grid'
 
 Vue.config.productionTip = false
 // 配置axios的基础路径，最后会请求到spring boot的控制器
@@ -17,6 +18,8 @@ axios.interceptors.request.use(config => {
 })
 // 将axios挂载到全局组件库中
 Vue.prototype.$http = axios
+// 引入第三方组件
+Vue.component('tree-table', TreeTable)
 
 new Vue({
   router,
