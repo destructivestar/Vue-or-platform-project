@@ -26,7 +26,7 @@
       <!--页签区域-->
       <el-tabs v-model="activeName" type="border-card" @tab-click="handleTabClick">
         <el-tab-pane label="动态参数" name="many">
-          <el-button type="primary" size="mini" :disabled="isBtnDisabled" @click="addParams">添加参数</el-button>
+          <el-button type="primary" size="mini" :disabled="isBtnDisabled" @click="addDialogVisible = true">添加参数</el-button>
           <!--动态参数表格-->
           <el-table :data="manyTableData" border stripe>
             <!--展开行-->
@@ -44,7 +44,7 @@
           </el-table>
         </el-tab-pane>
         <el-tab-pane label="静态属性" name="only">
-          <el-button type="primary" size="mini" :disabled="isBtnDisabled" @click="addParams">添加属性</el-button>
+          <el-button type="primary" size="mini" :disabled="isBtnDisabled" @click="addDialogVisible = true">添加属性</el-button>
           <!--动态参数表格-->
           <el-table :data="onlyTableData" border stripe>
             <!--展开行-->
@@ -71,13 +71,13 @@
         width="45%"
       >
         <el-form :model="addDataForm" :rules="addDataFormRules" ref="addDataFormRef" label-width="100px">
-          <el-form-item :label="titleText" prop="activeName">
-            <el-input v-model="addDataForm.activeName"/>
+          <el-form-item :label="titleText" prop="dataName">
+            <el-input v-model="addDataForm.dataName"/>
           </el-form-item>
         </el-form>
         <span slot="footer" class="dialog-footer">
           <el-button @click="addDialogVisible = false">取 消</el-button>
-          <el-button type="primary" @click="addDialogVisible = false">确 定</el-button>
+          <el-button type="primary" @click="addParams">确 定</el-button>
         </span>
       </el-dialog>
     </div>
@@ -101,10 +101,10 @@ export default {
       onlyTableData: [],
       addDialogVisible: false,
       addDataForm: {
-        activeName: ''
+        dataName: ''
       },
       addDataFormRules: {
-        activeName: [
+        dataName: [
           { required: true, message: '请输入参数名称', trigger: 'blur' },
           { min: 2, max: 5, message: '长度在 2 到 5 个字符', trigger: 'blur' }
         ]
@@ -181,10 +181,22 @@ export default {
         console.log(this.onlyTableData)
       }
     },
+    // 添加数据
     addParams () {
-      this.addDialogVisible = true
+      this.$refs.addDataFormRef.validate(async valid => {
+        if (!valid) return
+        const { data: res } = await this.$http.post('/categories/add', { cateId: this.cateId, attrName: this.addDataForm.dataName, attrSel: this.activeName })
+        if (res.code !== '000000') {
+          return this.$message.error('添加失败')
+        }
+        this.$message.success('添加成功')
+        this.getParamsData()
+      })
+
+      this.addDialogVisible = false
     },
     addDialogClosed () {
+      console.log(this.addDataForm.dataName)
       this.$refs.addDataFormRef.resetFields()
     }
   }
