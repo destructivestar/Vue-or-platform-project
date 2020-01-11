@@ -36,8 +36,8 @@
             <!--动态参数-->
             <el-table-column label="参数名称" prop="attrName"/>
             <el-table-column label="操作">
-              <template >
-                <el-button type="primary" icon="el-icon-edit" size="mini">编辑</el-button>
+              <template slot-scope="scope">
+                <el-button type="primary" icon="el-icon-edit" size="mini" @click="editDialog(scope.row.attrId)">编辑</el-button>
                 <el-button type="danger" icon="el-icon-delete" size="mini">删除</el-button>
               </template>
             </el-table-column>
@@ -45,7 +45,7 @@
         </el-tab-pane>
         <el-tab-pane label="静态属性" name="only">
           <el-button type="primary" size="mini" :disabled="isBtnDisabled" @click="addDialogVisible = true">添加属性</el-button>
-          <!--动态参数表格-->
+          <!--静态属性表格-->
           <el-table :data="onlyTableData" border stripe>
             <!--展开行-->
             <el-table-column type="expand"/>
@@ -80,6 +80,23 @@
           <el-button type="primary" @click="addParams">确 定</el-button>
         </span>
       </el-dialog>
+      <!--修改对话框-->
+      <el-dialog
+        @close="editDialogClosed"
+        :title="'添加' + titleText"
+        :visible.sync="editDialogVisible"
+        width="45%"
+      >
+        <el-form :model="editDataForm" :rules="editDataFormRules" ref="editDataFormRef" label-width="100px">
+          <el-form-item :label="titleText" prop="editName">
+            <el-input v-model="editDataForm.editName"/>
+          </el-form-item>
+        </el-form>
+        <span slot="footer" class="dialog-footer">
+          <el-button @click="editDialogVisible = false">取 消</el-button>
+          <el-button type="primary" @click="editParams">确 定</el-button>
+        </span>
+      </el-dialog>
     </div>
 </template>
 
@@ -87,7 +104,9 @@
 export default {
   data () {
     return {
+      // 三级分类数据树形列表
       cateList: [],
+      // 分类数据级联对象
       cateProps: {
         value: 'catId',
         label: 'catName',
@@ -97,18 +116,36 @@ export default {
       selectedKeys: [],
       // 被激活的页签的名称
       activeName: 'many',
+      // 动态参数
       manyTableData: [],
+      // 静态属性
       onlyTableData: [],
+      // 对话框的显示与隐藏
       addDialogVisible: false,
+      // 添加数据对象
       addDataForm: {
         dataName: ''
       },
+      // 校验数据对象
       addDataFormRules: {
         dataName: [
           { required: true, message: '请输入参数名称', trigger: 'blur' },
           { min: 2, max: 5, message: '长度在 2 到 5 个字符', trigger: 'blur' }
         ]
-      }
+      },
+      // 修改数据对象
+      editDataForm: {
+        editName: ''
+      },
+      // 修改数据校验
+      editDataFormRules: {
+        editName: [
+          { required: true, message: '请输入参数名称', trigger: 'blur' },
+          { min: 2, max: 5, message: '长度在 2 到 5 个字符', trigger: 'blur' }
+        ]
+      },
+      // 修改数据对话框的显示与隐藏
+      editDialogVisible: false
     }
   },
   created () {
@@ -129,6 +166,7 @@ export default {
       }
       return null
     },
+    // 动态获取对话框的标题
     titleText () {
       if (this.activeName === 'many') {
         return '动态参数'
@@ -136,6 +174,7 @@ export default {
     }
   },
   methods: {
+    // 获取级联选择框的数据
     async getCateList () {
       const { data: res } = await this.$http.get('cate/tree/list')
       if (res.code !== '000000') {
@@ -158,13 +197,16 @@ export default {
       }
       return data
     },
+    // 选择框改变时触发
     cateChange () {
       this.getParamsData()
     },
+    // 页签点击事件
     handleTabClick () {
       this.getParamsData()
       console.log(this.activeName)
     },
+    // 获取级联选择框的选中项
     async getParamsData () {
       // 如果等于3则是三级分类
       if (this.selectedKeys.length !== 3) {
@@ -195,9 +237,30 @@ export default {
 
       this.addDialogVisible = false
     },
+    // 添加数据对话框的关闭事件
     addDialogClosed () {
       console.log(this.addDataForm.dataName)
       this.$refs.addDataFormRef.resetFields()
+    },
+    // 修改数据对话款
+    async editDialog (attrId) {
+      // 异步请求获取数据并回显
+      const { data: res } = await this.$http.get('/categories/echo', { params: { attrId: attrId, catId: this.catId, attrSel: this.activeName } })
+      this.editDataForm.editName = res.data
+      this.editDialogVisible = true
+    },
+    // 修改数据关闭事件
+    editDialogClosed () {
+      this.$refs.editDataFormRef.resetFields()
+    },
+    // 修改操作
+    editParams () {
+      console.log(this.editDataForm.editName)
+      console.log(this.activeName)
+      console.log(this.cateId)
+      // 异步请求修改参数, 待办
+      // this.getCateList()
+      this.editDialogVisible = false
     }
   }
 }
