@@ -7,6 +7,12 @@ import './assets/css/global.css'
 import axios from 'axios'
 import './assets/fonts/iconfont.css'
 import TreeTable from 'vue-table-with-tree-grid'
+// 导入富文本编辑器
+import VueQuillEditor from 'vue-quill-editor'
+// require styles 导入富文本编辑器样式
+import 'quill/dist/quill.core.css'
+import 'quill/dist/quill.snow.css'
+import 'quill/dist/quill.bubble.css'
 
 Vue.config.productionTip = false
 // 配置axios的基础路径，最后会请求到spring boot的控制器
@@ -20,6 +26,8 @@ axios.interceptors.request.use(config => {
 Vue.prototype.$http = axios
 // 引入第三方组件
 Vue.component('tree-table', TreeTable)
+// 挂载
+Vue.use(VueQuillEditor)
 // 定义时间过滤器, ...高操作我也不懂
 Vue.filter('dateFormat', function (originVal) {
   const dt = new Date(originVal)

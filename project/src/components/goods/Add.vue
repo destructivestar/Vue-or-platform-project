@@ -77,6 +77,7 @@
               :action="uploadURL"
               :on-preview="handlePreview"
               :on-remove="handleRemove"
+              :on-success="handleSuccess"
               list-type="picture"
               name="image"
               >
@@ -84,14 +85,30 @@
               <div slot="tip" class="el-upload__tip">只能上传jpg/png文件，且不超过500kb</div>
             </el-upload>
           </el-tab-pane>
-          <el-tab-pane label="商品内容" name="4">商品内容</el-tab-pane>
+          <el-tab-pane label="商品内容" name="4">
+            <quill-editor v-model="addForm.goodsIntroduce"
+                          ref="myQuillEditorRef"
+                          >
+            </quill-editor>
+            <!--商品添加的按钮-->
+            <el-button type="primary" class="btnAdd" @click="add">添加商品</el-button>
+          </el-tab-pane>
         </el-tabs>
       </el-form>
     </el-card>
+    <!--图片预览对话框-->
+    <el-dialog
+      title="提示"
+      :visible.sync="imgDialogVisible"
+      width="50%"
+     >
+      <img :src="previewUrl" alt="图片丢失" class="preview-image"/>
+    </el-dialog>
   </div>
 </template>
 
 <script>
+import _ from 'lodash'
 export default {
   data () {
     return {
@@ -101,7 +118,10 @@ export default {
         goodsPrice: '',
         goodsWeight: '',
         goodsNumber: '',
-        goodsCat: []
+        goodsCat: [],
+        pics: [],
+        // 富文本编辑内容
+        goodsIntroduce: ''
       },
       // 校验规则
       addFormRules: {
@@ -138,8 +158,11 @@ export default {
       // 动态参数数据，many
       onlyTabData: [],
       // 上传图片地址
-      uploadURL: 'http://localhost:8090/goods/uploadImg'
-
+      uploadURL: 'http://localhost:8090/goods/uploadImg',
+      // 图片预览对话框
+      imgDialogVisible: false,
+      // 预览图片路径
+      previewUrl: ''
     }
   },
   created () {
@@ -210,12 +233,52 @@ export default {
       }
     },
     // 点击图片名称有预览效果的函数
-    handlePreview () {
-      console.log('我想预览')
+    handlePreview (response) {
+      console.log(response)
+      this.previewUrl = response.url
+      this.imgDialogVisible = true
     },
     // 图片移除的函数
-    handleRemove () {
-      console.log('我想删除')
+    handleRemove (filename) {
+      const i = this.addForm.pics.findIndex(x => x.name === filename)
+      this.addForm.pics.splice(i, 1)
+      console.log(this.addForm)
+    },
+    // 成功回调函数
+    handleSuccess (response) {
+      const path = { pics: response.data.name }
+      this.addForm.pics.push(path)
+      console.log(this.addForm)
+    },
+    // 最终的添加商品
+    add () {
+      this.$refs.addFormRef.validate(valid => {
+        if (!valid) {
+          return this.$message.error('请填写必要的表单项')
+        }
+      })
+      // 形成form对象分离
+      const form = _.cloneDeep(this.addForm)
+      this.addForm.goodsCat = form.join(',')
+      console.log(this.addForm)
+
+      // 动态参数
+      this.manyTabData.forEach(item => {
+        const newInfo = {
+          attrId: item.attrId,
+          attrVals: item.attrVals.join(' ')
+        }
+        this.addForm.attrs.push(newInfo)
+      })
+      // 静态属性
+      this.onlyTabData.forEach(item => {
+        const newInfo = {
+          attrId: item.attrId,
+          attrVals: item.attrVals
+        }
+        this.addForm.attrs.push(newInfo)
+      })
+      form.attrs = this.addForm.attrs
     }
   }
 }
@@ -225,5 +288,11 @@ export default {
 .el-checkbox {
   /*规则为 上:0 , 右:5 , 下:0 , 左:0 , 强置样式:!important*/
   margin: 0 5px 0 0 !important;
+}
+.preview-image{
+  width: 100%;
+}
+.btnAdd {
+  margin-top: 10px;
 }
 </style>
