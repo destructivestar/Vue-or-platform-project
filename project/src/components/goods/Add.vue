@@ -119,7 +119,10 @@ export default {
         goodsWeight: '',
         goodsNumber: '',
         goodsCat: [],
+        // 图片集
         pics: [],
+        // 属性集合
+        attrs: [],
         // 富文本编辑内容
         goodsIntroduce: ''
       },
@@ -127,23 +130,22 @@ export default {
       addFormRules: {
         goodsName: [
           { required: true, message: '请输入商品名称', trigger: 'blur' },
-          { min: 3, max: 5, message: '长度在 3 到 5 个字符', trigger: 'blur' }
+          { min: 1, max: 5, message: '长度在 1 到 5 个字符', trigger: 'blur' }
         ],
         goodsPrice: [
           { required: true, message: '请输入商品价格', trigger: 'blur' },
-          { min: 3, max: 5, message: '长度在 3 到 5 个数字', trigger: 'blur' }
+          { min: 1, max: 5, message: '长度在 1 到 5 个数字', trigger: 'blur' }
         ],
         goodsWeight: [
           { required: true, message: '请输入商品重量', trigger: 'blur' },
-          { min: 3, max: 5, message: '长度在 3 到 5 个数字', trigger: 'blur' }
+          { min: 1, max: 5, message: '长度在 1 到 5 个数字', trigger: 'blur' }
         ],
         goodsNumber: [
           { required: true, message: '请输入商品数量', trigger: 'blur' },
-          { min: 3, max: 5, message: '长度在 3 到 5 个数字', trigger: 'blur' }
+          { min: 1, max: 5, message: '长度在 1 到 5 个数字', trigger: 'blur' }
         ],
         goodsCat: [
-          { required: true, message: '请选择商品分类', trigger: 'blur' },
-          { min: 3, max: 5, message: '长度在 3 到 5 个数字', trigger: 'blur' }
+          { required: true, message: '请选择商品分类', trigger: 'blur' }
         ]
       },
       cateList: [],
@@ -248,10 +250,10 @@ export default {
     handleSuccess (response) {
       const path = { pics: response.data.name }
       this.addForm.pics.push(path)
-      console.log(this.addForm)
+      console.log(this.addForm.pics)
     },
     // 最终的添加商品
-    add () {
+    async add () {
       this.$refs.addFormRef.validate(valid => {
         if (!valid) {
           return this.$message.error('请填写必要的表单项')
@@ -259,9 +261,7 @@ export default {
       })
       // 形成form对象分离
       const form = _.cloneDeep(this.addForm)
-      this.addForm.goodsCat = form.join(',')
-      console.log(this.addForm)
-
+      form.goodsCat = form.goodsCat.join(',')
       // 动态参数
       this.manyTabData.forEach(item => {
         const newInfo = {
@@ -274,11 +274,20 @@ export default {
       this.onlyTabData.forEach(item => {
         const newInfo = {
           attrId: item.attrId,
-          attrVals: item.attrVals
+          attrValue: item.attrVals
         }
         this.addForm.attrs.push(newInfo)
       })
       form.attrs = this.addForm.attrs
+      console.log(form)
+      const { data: res } = await this.$http.post('goods/add', form)
+      console.log(res)
+      if (res.code === '11') {
+        return this.$message.warning('商品已存在')
+      } else if (res.code === '12') {
+        return this.$message.warning('商品添加失败')
+      }
+      this.$message.success('添加成功')
     }
   }
 }

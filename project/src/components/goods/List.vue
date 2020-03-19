@@ -98,10 +98,11 @@ export default {
         return this.$message.info('删除已取消')
       }
       // 为了保存数据先不删除
-      /* const { data: res } = await this.$http.delete(`goods/drop/${id}`)
-        if (res.code !== '000000') {
-          return this.$message.error('删除失败')
-        } */
+      const { data: res } = await this.$http.delete(`goods/drop/${id}`)
+      if (res.code !== '000000') {
+        return this.$message.error('删除失败')
+      }
+      this.getGoodsList()
       console.log(confirmResult)
     },
     goAddPage () {
