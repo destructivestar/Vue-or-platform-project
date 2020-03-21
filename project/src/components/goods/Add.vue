@@ -259,7 +259,7 @@ export default {
           return this.$message.error('请填写必要的表单项')
         }
       })
-      // 形成form对象分离
+      // 形成form对象分离,深拷贝
       const form = _.cloneDeep(this.addForm)
       form.goodsCat = form.goodsCat.join(',')
       // 动态参数
@@ -288,6 +288,7 @@ export default {
         return this.$message.warning('商品添加失败')
       }
       this.$message.success('添加成功')
+      await this.$router.push('/goods')
     }
   }
 }

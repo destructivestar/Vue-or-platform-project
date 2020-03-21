@@ -27,7 +27,7 @@
           <el-submenu :index="item.id + ''" v-for="item in menuList" :key="item.id">
             <!--菜单标题-->
             <template slot="title">
-              <i :class="iconObj[item.id]"></i>
+              <i :class="iconObj[item.id]"/>
               <span>{{item.psName}}</span>
             </template>
             <!--二级菜单-->
@@ -36,7 +36,7 @@
                           :key="subItem.id" @click="saveNavState('/'+subItem.psApiPath)">
               <!--二级菜单标题-->
               <template slot="title">
-                <i class="el-icon-menu"></i>
+                <i class="el-icon-menu"/>
                 <span>{{subItem.psName}}</span>
               </template>
             </el-menu-item>
